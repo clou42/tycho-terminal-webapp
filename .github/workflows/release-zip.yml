@@ -17,7 +17,7 @@ jobs:
 
       - name: Zip app with correct structure
         run: |
-          APP_DIR="tycho-terminal-webapp"   # set to "." if your app is at repo root
+          APP_DIR="."
           cd "$APP_DIR"
           zip -r ../tycho-terminal.zip . -x "**/.git*" "**/.github/**"
           mkdir -p "$GITHUB_WORKSPACE/build"
