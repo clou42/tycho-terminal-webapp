@@ -1,0 +1,35 @@
+name: Build & Release App ZIP
+on:
+  push:
+    branches: [ master ]   # change to main if needed
+    paths:
+      - 'tycho-terminal-webapp/**'
+      - '.github/workflows/release-zip.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Zip app with correct structure
+        run: |
+          APP_DIR="tycho-terminal-webapp"   # set to "." if your app is at repo root
+          cd "$APP_DIR"
+          zip -r ../tycho-terminal.zip . -x "**/.git*" "**/.github/**"
+          mkdir -p "$GITHUB_WORKSPACE/build"
+          mv ../tycho-terminal.zip "$GITHUB_WORKSPACE/build/tycho-terminal.zip"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: auto-${{ github.run_id }}-${{ github.sha }}
+          name: Auto Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: build/tycho-terminal.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
