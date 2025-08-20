@@ -32,8 +32,8 @@ app.get('/', (req, res) => {
         </head>
         <body>
             <div class=\"container terminal text-center\">
-                <h1>Welcome to Tycho Station Terminal</h1>
-                <p>Interact with ships, query crew manifests, and monitor incidents across the Belt.</p>
+                <h1>Oi Pampa, welcome to Tycho Station Terminal</h1>
+                <p>Interact with ships, query crew manifests, and monitor incidents across the Belt. All with a twist.</p>
             </div>
         </body>
         </html>
