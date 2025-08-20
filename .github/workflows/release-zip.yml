@@ -1,7 +1,7 @@
 name: Build & Release App ZIP
 on:
   push:
-    branches: [ master ]   # change to main if needed
+    branches: [ main ]   # change to main if needed
     paths:
       - 'tycho-terminal-webapp/**'
       - '.github/workflows/release-zip.yml'
