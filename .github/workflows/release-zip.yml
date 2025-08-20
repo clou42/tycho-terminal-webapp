@@ -1,0 +1,44 @@
+# GitHub Actions: build flat package and publish Release asset
+# File: .github/workflows/release-zip.yml
+name: Build & Release App ZIP
+
+on:
+push:
+branches: [ master ]
+paths:
+- 'tycho-terminal-webapp/**'
+- '.github/workflows/release-zip.yml'
+
+permissions:
+contents: write # required to create releases
+
+jobs:
+release:
+runs-on: ubuntu-latest
+steps:
+- name: Checkout
+uses: actions/checkout@v4
+
+- name: Zip app with correct structure
+run: |
+APP_DIR="." # set to "." if code is in repo root
+mkdir -p build
+cd "$APP_DIR"
+# Zip the *contents* of the app folder so files are at ZIP root (no extra parent dir)
+zip -r "$GITHUB_WORKSPACE/build/tycho-terminal.zip" . -x "**/.git*" "**/.github/**"
+
+- name: Create GitHub Release (tag = date)
+id: create_release
+uses: softprops/action-gh-release@v2
+env:
+GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+with:
+tag_name: auto-${{ github.ref_name }}-${{ github.run_id }}-${{ github.sha }}
+name: Auto Release ${{ github.ref_name }} # latest package for deploy
+draft: false
+prerelease: false
+files: |
+build/tycho-terminal.zip
+
+- name: Output release asset URL
+run: echo "asset_url=${{ steps.create_release.outputs.upload_url }}" # debug
