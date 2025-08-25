@@ -13,23 +13,39 @@ jobs:
   release:
     runs-on: ubuntu-latest
     env:
-      APP_DIR: "."
+      APP_DIR: "."        # set to subfolder if needed, e.g. "tycho-terminal-webapp"
       NODE_VERSION: "22"
       NPM_FLAGS: "--omit=dev"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ env.NODE_VERSION }}
+      # Setup Node with cache ONLY if a lockfile exists
+      - name: Setup Node (with cache)
+        if: hashFiles(format('{0}/package-lock.json', env.APP_DIR)) != ''
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
           cache-dependency-path: ${{ env.APP_DIR }}/package-lock.json
 
-      - name: Install production dependencies
+      # Fallback when no lockfile -> no cache input (avoids the error)
+      - name: Setup Node (no cache)
+        if: hashFiles(format('{0}/package-lock.json', env.APP_DIR)) == ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Install deps: prefer npm ci when lockfile exists; otherwise npm install
+      - name: Install production deps (npm ci)
+        if: hashFiles(format('{0}/package-lock.json', env.APP_DIR)) != ''
         working-directory: ${{ env.APP_DIR }}
         run: npm ci $NPM_FLAGS
+
+      - name: Install production deps (npm install)
+        if: hashFiles(format('{0}/package-lock.json', env.APP_DIR)) == ''
+        working-directory: ${{ env.APP_DIR }}
+        run: npm install $NPM_FLAGS
 
       - name: Build flat ZIP (include node_modules)
         run: |
