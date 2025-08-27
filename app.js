@@ -147,14 +147,13 @@ app.get('/', (req, res) => {
               <div class="card p-3">
                 <h5 class="mb-2">Mottos & Signals</h5>
                 <div id="motto" class="fw-semibold" style="color:var(--accent-2)"></div>
-                <div class="mt-3 opa-ascii">
-{String.raw`   ____  ____    _         _           
-  / __ \\/ __ \\  (_)  _____(_)__  _____ 
- / / / / / / / / /  / ___/ / _ \\/ ___/
-/ /_/ / /_/ / / /  (__  ) /  __/ /    
-\\____/\\____/_/ /  /____/_/\\___/_/     
-          /___/   OPA • BELTA LOWDA`}
-                </div>
+                <pre class="mt-3 opa-ascii">
+   ____  ____    _         _           
+  / __ \/ __ \  (_)  _____(_)__  ____
+  ...
+\____/\____/_/ /  /____/_/\___/_/     
+          /___/   OPA • BELTA LOWDA
+</pre>
               </div>
 
               <!-- Shipboard Actions -->
@@ -228,7 +227,7 @@ app.get('/', (req, res) => {
 
           // Simple uptime timer
           const up = document.getElementById('uptime');
-          let secs = 0; setInterval(()=>{ secs++; const h=String(Math.floor(secs/3600)).padStart(2,'0'); const m=String(Math.floor((secs%3600)/60)).padStart(2,'0'); const s=String(secs%60).padStart(2,'0'); up.textContent=\`\${h}:\${m}:\${s}\`;},1000);
+          let secs = 0; setInterval(()=>{ secs++; const h=String(Math.floor(secs/3600)).padStart(2,'0'); const m=String(Math.floor((secs%3600)/60)).padStart(2,'0'); const s=String(secs%60).padStart(2,'0'); up.textContent = h + ":" + m + ":" + s;
         </script>
       </body>
     </html>
