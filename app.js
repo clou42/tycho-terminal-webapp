@@ -189,8 +189,17 @@ app.get('/', (req, res) => {
       const tbody = document.querySelector('#crew-table tbody');
       tbody.innerHTML = '<tr><td colspan="6">Loading…</td></tr>';
       try { const r = await fetch('/crew'); const data = await r.json();
-        tbody.innerHTML = data.map(r => `<tr><td>${esc(r.first_name)}</td><td>${esc(r.last_name)}</td><td>${esc(r.faction||'')}</td><td>${esc(r.role||'')}</td><td>${esc(r.ship||'')}</td><td>${esc(r.status||'')}</td></tr>`).join('') || '<tr><td colspan="6">No records</td></tr>';
-      } catch(e){ tbody.innerHTML = `<tr><td colspan="6">Error: ${esc(e.message)}</td></tr>`; }
+        tbody.innerHTML = data.map(function(r){
+          return '<tr>'+
+            '<td>'+esc(r.first_name)+'</td>'+
+            '<td>'+esc(r.last_name)+'</td>'+
+            '<td>'+esc(r.faction||'')+'</td>'+
+            '<td>'+esc(r.role||'')+'</td>'+
+            '<td>'+esc(r.ship||'')+'</td>'+
+            '<td>'+esc(r.status||'')+'</td>'+
+          '</tr>';
+        }).join('') || '<tr><td colspan="6">No records</td></tr>';
+      } catch(e){ tbody.innerHTML = '<tr><td colspan="6">Error: ' + esc(e.message) + '</td></tr>';
     }
     document.getElementById('btn-crew-refresh').addEventListener('click', loadCrew);
     document.getElementById('btn-crew-add').addEventListener('click', async () => {
