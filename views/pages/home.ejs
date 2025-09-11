@@ -1,0 +1,68 @@
+<div class="text-center">
+  <h1 class="display-4">Welcome to Tycho Station Terminal</h1>
+  <p class="lead"><%= tagline %></p>
+
+  <div class="row g-4 mt-4">
+    <div class="col-md-3">
+      <div class="card shadow h-100 bg-card hover-raise">
+        <div class="card-body">
+          <h5 class="card-title">Ship Registry</h5>
+          <p>Review and update manifests, registry info, and faction alignment.</p>
+          <a href="/sql" class="btn btn-opa-primary">Open Registry</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow h-100 bg-card hover-raise">
+        <div class="card-body">
+          <h5 class="card-title">Docking Queue</h5>
+          <p>Berth allocations, repair windows, and tug dispatches for inbound haulers.</p>
+          <a href="/docking" class="btn btn-opa-primary">Open Docking</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow h-100 bg-card hover-raise">
+        <div class="card-body">
+          <h5 class="card-title">Station Services</h5>
+          <p>OPA logistics, supply chain manifests, and habitat maintenance tickets.</p>
+          <a href="/services" class="btn btn-opa-primary">Open Services</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card shadow h-100 bg-card hover-raise">
+        <div class="card-body">
+          <h5 class="card-title">Data Interfaces</h5>
+          <p>Telemetry feeds, comm relays, and diagnostics utilities for integrators.</p>
+          <form method="post" action="/api/proxy" class="d-flex gap-2 mt-2">
+            <input class="form-control" type="url" name="url" placeholder="http://example.com" required>
+            <button class="btn btn-opa-primary" type="submit">API Proxy</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row g-4 mt-4">
+    <div class="col-md-6">
+      <div class="card bg-card shadow hover-raise">
+        <div class="card-body text-start">
+          <h5 class="card-title">Operations Bulletin</h5>
+          <p class="mb-0">Tycho Facilities has scheduled routine diagnostics across external antenna arrays and refinery conveyor nodes. Minor latency may occur on non-critical links.</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card bg-card shadow hover-raise">
+        <div class="card-body text-start">
+          <h5 class="card-title">OPA Community Board</h5>
+          <p class="mb-0">Crew swaps, supply auctions, and mutual aid dispatches can be coordinated via authorized relays. Be water, Beltalowda.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

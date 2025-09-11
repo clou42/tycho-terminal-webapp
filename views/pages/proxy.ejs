@@ -1,0 +1,19 @@
+<div class="container">
+  <h1 class="mb-3"><%= title %></h1>
+
+  <form method="post" action="/api/proxy" class="d-flex gap-2 mb-3">
+    <input class="form-control" type="url" name="url" value="<%= url %>" placeholder="http://tycho-terminal.com" required>
+    <button class="btn btn-opa-primary" type="submit">Fetch</button>
+  </form>
+
+  <div class="card bg-card shadow">
+    <div class="card-body">
+      <h6 class="text-muted mb-2">Fetched URL:</h6>
+      <code class="d-block mb-3"><%= url || "—" %></code>
+
+      <h6 class="text-muted mb-2">Response:</h6>
+      <pre class="proxy-output"><%- body ? body.replace(/[&<>]/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[s])) : "" %></pre>
+      <!-- For an intentional XSS challenge later, swap the line above to: <pre class="proxy-output"><%- body %></pre> -->
+    </div>
+  </div>
+</div>
