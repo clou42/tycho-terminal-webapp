@@ -20,6 +20,7 @@ app.set("layout", "layouts/base");
 app.use("/", routes);
 app.use(notFound);
 app.use(errorHandler);
+app.use('/favicon.ico', express.static('public/favicon.ico'));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Tycho Station listening on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Tycho Station Terminal listening on http://localhost:${PORT}`));
