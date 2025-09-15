@@ -6,6 +6,7 @@ on:
       - 'app.js'
       - 'package.json'
       - '.github/workflows/release-zip.yml'
+      - '*'
 
 permissions:
   contents: write
