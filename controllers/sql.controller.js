@@ -1,12 +1,17 @@
-import { ensureSchema, unsafeExec, safeQueryAll, unsafeQueryAll } from "../services/db.service.js";
+import { ensureSchema, unsafeExec, safeQueryAll, unsafeQueryAll, dbInfo } from "../services/db.service.js";
 
-export async function listShips(req, res, next) {
-  try {
-    await ensureSchema();
-    const ships = await safeQueryAll("SELECT name, registry, faction, tonnage FROM ships ORDER BY id DESC Limit 3");
-    res.render("pages/sql", { title: "Ship Register", ships });
-  } catch (err) { next(err); }
-}
+ export async function listShips(req, res, next) {
+   try {
+     await ensureSchema();
+     const { engine } = dbInfo(); // "sqlite" | "mssql"
+     const base = "SELECT name, registry, faction, tonnage FROM ships ORDER BY id DESC";
+     const sql  = engine === "mssql"
+       ? base + " OFFSET 0 ROWS FETCH NEXT 3 ROWS ONLY" // T-SQL
+       : base + " LIMIT 3";                              // SQLite
+     const ships = await safeQueryAll(sql);
+     res.render("pages/sql", { title: "Ship Register", ships });
+   } catch (err) { next(err); }
+ }
 
 // ❌ Intentionally vulnerable INSERT — string concatenation of user inputs
 export async function insecureInsert(req, res, next) {
