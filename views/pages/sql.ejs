@@ -35,12 +35,11 @@
   </div>
 
   <hr class="my-4" />
-  <h3>Current Ships</h3>
+  <h3>Last Ships</h3>
   <div class="table-responsive">
     <table class="table table-striped table-dark align-middle">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Name</th>
           <th>Registry</th>
           <th>Faction</th>
@@ -52,7 +51,6 @@
           <tr><td colspan="5" class="text-center text-muted">No ships in registry yet.</td></tr>
         <% } else { ships.forEach(s => { %>
           <tr>
-            <td><%= s.id %></td>
             <td><%= s.name %></td>
             <td><%= s.registry %></td>
             <td><%= s.faction %></td>

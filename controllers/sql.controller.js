@@ -3,8 +3,8 @@ import { ensureSchema, unsafeExec, safeQueryAll, unsafeQueryAll } from "../servi
 export async function listShips(req, res, next) {
   try {
     await ensureSchema();
-    const ships = await safeQueryAll("SELECT id, name, registry, faction, tonnage FROM ships ORDER BY id DESC");
-    res.render("pages/sql", { title: "Ship Register (Vulnerable)", ships });
+    const ships = await safeQueryAll("SELECT name, registry, faction, tonnage FROM ships ORDER BY id DESC Limit 3");
+    res.render("pages/sql", { title: "Ship Register", ships });
   } catch (err) { next(err); }
 }
 
