@@ -38,9 +38,16 @@
         <div class="card-body">
           <h5 class="card-title">Data Interfaces</h5>
           <p>Telemetry feeds, comm relays, and diagnostics utilities for integrators.</p>
-          <form method="post" action="/api/proxy" class="d-flex gap-2 mt-2">
-            <input class="form-control" type="url" name="url" placeholder="http://example.com" required>
-            <button class="btn btn-opa-primary" type="submit">API Proxy</button>
+          <form method="post" action="/api/proxy" class="d-flex flex-column gap-2 mt-2">
+            <div class="d-flex gap-2">
+              <input class="form-control" type="url" name="url" placeholder="http://example.com" required>
+              <button class="btn btn-opa-primary" type="submit">API Proxy</button>
+            </div>
+            <!-- NEW: optional headers -->
+            <details>
+              <summary>Advanced headers</summary>
+              <textarea class="form-control mt-2" name="headers" rows="3" placeholder="Header-Name: value"></textarea>
+            </details>
           </form>
         </div>
       </div>

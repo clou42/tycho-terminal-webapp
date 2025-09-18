@@ -43,3 +43,45 @@ export async function doFetch(target) {
     req.end();
   });
 }
+
+import axios from "axios";
+
+// Parse "Header: value" lines into an object. Ignores blanks and malformed lines safely.
+function parseHeaderBlock(text = '') {
+  const headers = {};
+  String(text).split(/\r?\n/).forEach(line => {
+    const i = line.indexOf(':');
+    if (i > 0) {
+      const key = line.slice(0, i).trim();
+      const val = line.slice(i + 1).trim();
+      if (key) headers[key] = val;
+    }
+  });
+  return headers;
+}
+
+/**
+ * Fetch a URL with optional custom headers.
+ * @param {string} url
+ * @param {string} [headersText] - optional multi-line "Name: value" block
+ */
+export async function fetchUrl(url, headersText) {
+  const custom = parseHeaderBlock(headersText);
+  const headers = {
+    'User-Agent': 'Tycho-Proxy/1.0',
+    ...custom,
+  };
+
+  // Allow 1xx–5xx to pass through so the UI can show raw bodies/status.
+  const resp = await axios.get(url, {
+    headers,
+    validateStatus: () => true,
+    timeout: 10000,
+    maxRedirects: 5,
+  });
+
+  // Prefer text; stringify JSON objects to a string so the EJS view can render.
+  const body = typeof resp.data === 'string' ? resp.data : JSON.stringify(resp.data, null, 2);
+  return { status: resp.status, headers: resp.headers, body };
+}
+
