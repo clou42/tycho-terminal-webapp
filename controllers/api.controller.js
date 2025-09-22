@@ -24,6 +24,7 @@ export async function proxyFetchForm(req, res, next) {
     }
 
     // NOTE: http.fetchUrl(url, headersText) must accept the header block (one "Name: value" per line)
+    console.log("fetchUrl with: ", url,  " and: " + headersText);
     const result = await fetchUrl(url, headersText);
 
     // Render the same proxy view with the fetched response body
