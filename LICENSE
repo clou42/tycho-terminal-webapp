@@ -1,0 +1,40 @@
+Azure Security Lab - Dual License
+=================================
+
+Copyright (c) 2025 [Fabian Ullrich]
+
+This project is dual-licensed under the following terms:
+
+1. GNU General Public License v3 (GPL-3.0)
+   -------------------------------------------------
+   You may use, copy, modify, and distribute this project under the terms of
+   the GNU General Public License v3.0, as published by the Free Software
+   Foundation. The full license text is available in the file LICENSE-GPLv3
+   and at <https://www.gnu.org/licenses/gpl-3.0.html>.
+
+   Key points:
+   - Free for personal, academic, and commercial use under GPL terms.
+   - Modifications and redistributions must also be licensed under GPL v3.
+   - Patent protection is included.
+   - Use in DRM or hardware-locking systems ("Tivoization") is prohibited.
+
+2. Commercial License
+   -------------------------------------------------
+   Alternatively, you may obtain a **commercial license** for use in
+   proprietary, closed-source, or commercial environments, including but not
+   limited to:
+   - Corporate training programs
+   - Consulting services
+   - SaaS platforms
+   - Commercial products
+
+   A commercial license grants rights beyond GPL v3, including the ability
+   to use this project without the copyleft obligations of GPL.
+
+   To inquire about commercial licensing, please contact:
+   [azurelab@fullsec.de]
+
+3. Disclaimer of Warranty
+   -------------------------------------------------
+   This project is provided "as is", without warranty of any kind, express or
+   implied. See the GPL v3 license text for details.
