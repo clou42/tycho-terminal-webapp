@@ -52,8 +52,8 @@ jobs:
       - name: Build flat ZIP (include node_modules)
         run: |
           cd "$APP_DIR"
-          # Zip the *contents* so files are at ZIP root (no parent directory)
-          zip -r ../tycho-terminal.zip . -x "**/.git*" "**/.github/**"
+          zip -r ../tycho-terminal.zip * \
+            -x ".git/**" ".github/**"
           mkdir -p "$GITHUB_WORKSPACE/build"
           mv ../tycho-terminal.zip "$GITHUB_WORKSPACE/build/tycho-terminal.zip"
 
