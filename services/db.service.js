@@ -53,6 +53,18 @@ function queryAllSqlite(sql, params = []) {
 // ---------------------- MSSQL (Azure SQL) ----------------------
 let sql, sqlPool;
 
+// Transient and networky failures worth retrying
+const TRANSIENT_CODES = new Set([
+  "ESOCKET", "ETIMEOUT", "ELOGIN", "ECONNRESET", "ENOTOPEN", "ECONNCLOSED"
+]);
+// Backoff settings
+const MIN_BACKOFF_MS = 500;
+const MAX_BACKOFF_MS = 30_000;
+
+let nextBackoffMs = MIN_BACKOFF_MS;
+let connecting = null;
+let unhealthy = false;
+
 function baseSqlConfig() {
   const server = process.env.DB_HOST || process.env.AZURE_SQL_SERVER;
   const database = process.env.DB_NAME || process.env.AZURE_SQL_DATABASE;
@@ -67,49 +79,121 @@ function baseSqlConfig() {
   };
 }
 
-async function initMssql() {
-  const { default: mssql } = await import("mssql");
-  sql = mssql;
+function wantManagedIdentity() {
+  const PROVIDER_HINT = (process.env.DB_PROVIDER || process.env.DB_CLIENT || "").toLowerCase();
+  const AUTH_TYPE = (process.env.DB_AUTH_TYPE || process.env.AZURE_SQL_AUTHENTICATIONTYPE || "").toLowerCase();
+  const HAS_SQLSERVER_CS =
+    !!process.env.SQLSERVER_CONNECTION_STRING || !!process.env.AZURE_SQL_CONNECTIONSTRING;
 
-  const wantMI =
-    AUTH_TYPE === "azure-active-directory-default" ||
-    AUTH_TYPE === "azure-active-directory-msi-app-service" ||
-    // sensible default on App Service with identity turned on:
-    (!!process.env.WEBSITE_SITE_NAME && !!process.env.IDENTITY_ENDPOINT && !HAS_SQLSERVER_CS);
+  return (
+    PROVIDER_HINT === "mssql" &&
+    (
+      AUTH_TYPE === "azure-active-directory-default" ||
+      AUTH_TYPE === "azure-active-directory-msi-app-service" ||
+      (!!process.env.WEBSITE_SITE_NAME && !!process.env.IDENTITY_ENDPOINT && !HAS_SQLSERVER_CS)
+    )
+  );
+}
 
-  // 1) Managed Identity (recommended)
-  if (wantMI) {
-    const cfg = {
+function buildMssqlConfig() {
+  const AUTH_TYPE = (process.env.DB_AUTH_TYPE || process.env.AZURE_SQL_AUTHENTICATIONTYPE || "").toLowerCase();
+  const HAS_SQLSERVER_CS =
+    !!process.env.SQLSERVER_CONNECTION_STRING || !!process.env.AZURE_SQL_CONNECTIONSTRING;
+
+  if (wantManagedIdentity()) {
+    return {
       ...baseSqlConfig(),
       authentication: {
-        // Works with DefaultAzureCredential under the hood via Tedious
-        // and supports token refresh transparently.
+        // Tedious handles token acquisition/refresh via AAD types.
         type: AUTH_TYPE || "azure-active-directory-default",
       },
     };
-    sqlPool = await new sql.ConnectionPool(cfg).connect();
-    return;
   }
-
-  // 2) Single connection string (SQL auth)
   if (HAS_SQLSERVER_CS) {
-    const cs = process.env.SQLSERVER_CONNECTION_STRING || process.env.AZURE_SQL_CONNECTIONSTRING;
-    sqlPool = await new sql.ConnectionPool(cs).connect();
-    return;
+    return process.env.SQLSERVER_CONNECTION_STRING || process.env.AZURE_SQL_CONNECTIONSTRING;
   }
-
-  // 3) Username/password (discouraged in prod; kept for completeness)
   const user = process.env.DB_USER;
   const password = process.env.DB_PASSWORD;
   if (user && password) {
-    const cfg = { ...baseSqlConfig(), user, password };
-    sqlPool = await new sql.ConnectionPool(cfg).connect();
-    return;
+    return { ...baseSqlConfig(), user, password };
   }
-
   throw new Error("No valid MSSQL configuration found.");
 }
 
+function installPoolMonitors(pool) {
+  pool.on("error", (err) => {
+    // Mark unhealthy and trigger reconnect on next query.
+    unhealthy = true;
+    // Optional: log once
+    console.error("[mssql] pool error:", err?.code || err?.name || err?.message);
+  });
+}
+
+async function connectPool(force = false) {
+  if (!force && sqlPool?.connected && !unhealthy) return sqlPool;
+
+  if (connecting) return connecting; // dedupe concurrent callers
+
+  connecting = (async () => {
+    // Close old pool if present
+    try { if (sqlPool) await sqlPool.close(); } catch { /* ignore */ }
+
+    // Recreate pool
+    const cfg = buildMssqlConfig();
+    const pool = new sql.ConnectionPool(cfg);
+    installPoolMonitors(pool);
+
+    // Exponential backoff until connect succeeds
+    for (;;) {
+      try {
+        await pool.connect();
+        sqlPool = pool;
+        unhealthy = false;
+        nextBackoffMs = MIN_BACKOFF_MS;
+        return sqlPool;
+      } catch (err) {
+        // Back off then try again
+        await new Promise(r => setTimeout(r, nextBackoffMs));
+        nextBackoffMs = Math.min(nextBackoffMs * 2, MAX_BACKOFF_MS);
+      }
+    }
+  })();
+
+  try {
+    const p = await connecting;
+    return p;
+  } finally {
+    connecting = null;
+  }
+}
+
+function isTransient(err) {
+  const code = err?.code || err?.name;
+  return TRANSIENT_CODES.has(code) || /ConnectionError|Timeout|Login failed/i.test(String(code || err?.message));
+}
+
+async function withSqlRequest(run) {
+  // Ensure we have a healthy pool
+  await connectPool();
+
+  try {
+    return await run(sqlPool.request());
+  } catch (err) {
+    if (!isTransient(err)) throw err;
+
+    // Force rebuild, then single retry
+    await connectPool(true);
+    return run(sqlPool.request());
+  }
+}
+
+async function initMssql() {
+  const { default: mssql } = await import("mssql");
+  sql = mssql;
+  await connectPool();
+}
+
+// parameter helper unchanged
 function paramize(sqlStr, params) {
   let i = 0;
   return {
@@ -117,18 +201,22 @@ function paramize(sqlStr, params) {
     names: params.map((_, ix) => `p${ix + 1}`),
   };
 }
+
 async function queryAllMssql(q, params = []) {
   const { text, names } = paramize(q, params);
-  const req = sqlPool.request();
-  params.forEach((v, i) => req.input(names[i], v));
-  const res = await req.query(text);
-  return res.recordset || [];
+  return withSqlRequest(async (req) => {
+    params.forEach((v, i) => req.input(names[i], v));
+    const res = await req.query(text);
+    return res.recordset || [];
+  });
 }
+
 async function execMssql(q, params = []) {
   const { text, names } = paramize(q, params);
-  const req = sqlPool.request();
-  params.forEach((v, i) => req.input(names[i], v));
-  await req.query(text);
+  return withSqlRequest(async (req) => {
+    params.forEach((v, i) => req.input(names[i], v));
+    await req.query(text);
+  });
 }
 
 // ---------------------- Public API ----------------------
@@ -145,25 +233,26 @@ export async function safeQueryAll(q, params = []) {
   return ENGINE === "mssql" ? queryAllMssql(q, params) : queryAllSqlite(q, params);
 }
 // Return rows for a raw SELECT (intentionally unsafe / injectable)
-export async function unsafeQueryAll(sql) {
+export async function unsafeQueryAll(sqlStr) {
   await ensureReady();
   if (ENGINE === "mssql") {
-    const res = await sqlPool.request().query(sql);
-    console.log("unsafeQueryAll result using mssql");
-    return res.recordset || [];
+    return withSqlRequest(async (req) => {
+      const res = await req.query(sqlStr);
+      console.log("unsafeQueryAll result using mssql");
+      return res.recordset || [];
+    });
   }
-  // SQLite (dev)
-  const res = queryAllSqlite(sql); // no params => still raw/injectable
+  const res = queryAllSqlite(sqlStr);
   console.log("unsafeQueryAll result using sqlite:");
   return res;
 }
 export async function unsafeExec(q, params = []) {
   await ensureReady();
-  console.log("unsafeExec using: " + ENGINE === "mssql" ? "mssql" : "sqlite");
+  console.log("unsafeExec using:", ENGINE === "mssql" ? "mssql" : "sqlite"); // fixed precedence
   return ENGINE === "mssql" ? execMssql(q, params) : execSqlite(q);
 }
 export function dbInfo() {
   return ENGINE === "mssql"
-    ? { engine: "mssql", host: process.env.DB_HOST || process.env.AZURE_SQL_SERVER, db: process.env.DB_NAME || process.env.AZURE_SQL_DATABASE, auth: AUTH_TYPE || (HAS_SQLSERVER_CS ? "connection-string" : "mi") }
+    ? { engine: "mssql", host: process.env.DB_HOST || process.env.AZURE_SQL_SERVER, db: process.env.DB_NAME || process.env.AZURE_SQL_DATABASE, auth: (process.env.DB_AUTH_TYPE || process.env.AZURE_SQL_AUTHENTICATIONTYPE || "").toLowerCase() || ((!!process.env.SQLSERVER_CONNECTION_STRING || !!process.env.AZURE_SQL_CONNECTIONSTRING) ? "connection-string" : "mi") }
     : { engine: "sqlite", path: sqliteDb?.filename };
 }
