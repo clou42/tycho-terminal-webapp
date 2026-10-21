@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "node --watch app.js",
     "start": "node app.js",
+    "test": "node --test tests/*.test.js",
     "db:reset": "node scripts/db-reset.js"
   },
   "dependencies": {

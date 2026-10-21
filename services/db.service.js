@@ -37,6 +37,16 @@ async function initSqlite() {
       faction TEXT NOT NULL,
       tonnage INTEGER DEFAULT 0
     );
+    CREATE TABLE IF NOT EXISTS docking_jobs (
+      id TEXT PRIMARY KEY,
+      ship TEXT NOT NULL,
+      target_vm TEXT NOT NULL,
+      probe_target TEXT NOT NULL,
+      status TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      completed_at TEXT,
+      result TEXT
+    );
   `);
 }
 function execSqlite(sql) {
@@ -45,6 +55,11 @@ function execSqlite(sql) {
 function queryAllSqlite(sql, params = []) {
   return new Promise((resolve, reject) =>
     sqliteDb.all(sql, params, (e, rows) => (e ? reject(e) : resolve(rows)))
+  );
+}
+function runSqlite(sql, params = []) {
+  return new Promise((resolve, reject) =>
+    sqliteDb.run(sql, params, function (e) { e ? reject(e) : resolve(this.changes); })
   );
 }
 
@@ -231,6 +246,10 @@ export async function ensureSchema() { await ensureReady(); }
 export async function safeQueryAll(q, params = []) {
   await ensureReady();
   return ENGINE === "mssql" ? queryAllMssql(q, params) : queryAllSqlite(q, params);
+}
+export async function safeExec(q, params = []) {
+  await ensureReady();
+  return ENGINE === "mssql" ? execMssql(q, params) : runSqlite(q, params);
 }
 // Return rows for a raw SELECT (intentionally unsafe / injectable)
 export async function unsafeQueryAll(sqlStr) {

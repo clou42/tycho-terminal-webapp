@@ -1,6 +1,58 @@
 <div class="container">
-  <h1 class="mb-4">Docking Queue</h1>
-  <p class="text-muted">This module tracks berth rotations and maintenance holds. Integrations pending.</p>
-  <div class="alert alert-dark">Prototype view — content will expand as we wire more feeds.</div>
-  <a class="btn btn-opa-primary" href="/">Back to Terminal</a>
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <span class="badge opa-badge">STATION OPS</span>
+      <h1 class="mt-2">Docking Dispatch</h1>
+      <p class="text-muted">Queue a telemetry check for an incoming vessel. Completed diagnostics appear below.</p>
+    </div>
+    <a href="/" class="btn btn-outline-light">Back to Terminal</a>
+  </div>
+
+  <% if (warning) { %><div class="alert alert-warning"><%= warning %></div><% } %>
+  <% if (error) { %><div class="alert alert-danger"><%= error %></div><% } %>
+
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="card bg-card shadow h-100">
+        <div class="card-body">
+          <h2 class="h5">New diagnostic request</h2>
+          <form method="post" action="/docking" class="vstack gap-3 mt-3">
+            <label>Vessel
+              <select class="form-select mt-1" name="ship">
+                <option value="Rocinante">Rocinante · berth 03</option>
+              </select>
+            </label>
+            <label>Telemetry host
+              <input class="form-control mt-1" name="probeTarget" value="localhost" maxlength="160" required>
+            </label>
+            <small class="text-muted">Dispatch checks the vessel's relay from the operations node. Requests can take a few minutes.</small>
+            <button class="btn btn-opa-primary" type="submit">Queue diagnostic</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-7">
+      <div class="card bg-card shadow h-100">
+        <div class="card-body">
+          <h2 class="h5">Operations feed</h2>
+          <% if (!jobs.length) { %>
+            <p class="text-muted mb-0">No dispatches yet. Submit a telemetry check to start the feed.</p>
+          <% } else { %>
+            <div class="vstack gap-3 mt-3">
+              <% jobs.forEach(job => { %>
+                <div class="border rounded p-3">
+                  <div class="d-flex justify-content-between align-items-start gap-3">
+                    <div><strong><%= job.ship %></strong><br><small class="text-muted"><%= job.probe_target %> · <%= job.created_at %></small></div>
+                    <span class="badge <%= job.status === 'completed' ? 'bg-success' : job.status === 'failed' ? 'bg-danger' : 'bg-warning text-dark' %>"><%= job.status %></span>
+                  </div>
+                  <% if (job.result) { %><pre class="mt-3 mb-0 p-2 rounded bg-dark text-light" style="white-space:pre-wrap;max-height:220px;overflow:auto"><%= job.result %></pre><% } %>
+                </div>
+              <% }) %>
+            </div>
+          <% } %>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
+<% if (jobs.some(job => job.status === 'queued')) { %><script>setTimeout(() => location.reload(), 10000);</script><% } %>

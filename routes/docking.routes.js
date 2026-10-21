@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { getDocking } from "../controllers/docking.controller.js";
+import { getDocking, postDocking } from "../controllers/docking.controller.js";
 const router = Router();
 router.get("/", getDocking);
+router.post("/", postDocking);
 export default router;
