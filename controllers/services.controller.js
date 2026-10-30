@@ -10,6 +10,7 @@ export async function getServices(req, res) {
     `[${now}] WARN  TychoBus: circuit 'dock-gantries' latency spike — rerouting via ring 3.`,
     `[${now}] ERROR BlueProtoMux: unrecognized biomorphic pattern at Eros(-1).`,
     `[${now}] WARN  StationServices: manifest sync pending; cache: STALE (ttl=-42s).`,
+    `[${now}] INFO  Ops handoff — Jim to Alex: I rotated your Rocinante keys. I dropped the updated details in credentials.json — Jim`,
     `[${now}] INFO  Telemetry: opa://tycho/services heartbeat OK; anomalies: 1.`,
   ];
   res.render("pages/services", { title: "Station Services", errors,
